@@ -6,187 +6,187 @@ import cn.wjdiankong.main.Utils;
 
 public class StringChunk {
 
-	public byte[] type;
-	public byte[] size;
-	public byte[] strCount;
-	public byte[] styleCount;
-	public byte[] unknown;
-	public byte[] strPoolOffset;
-	public byte[] stylePoolOffset;
-	public byte[] strOffsets;
-	public byte[] styleOffsets;
-	public byte[] strPool;
-	public byte[] stylePool;
+    public byte[] type;
+    public byte[] size;
+    public byte[] strCount;
+    public byte[] styleCount;
+    public byte[] unknown;
+    public byte[] strPoolOffset;
+    public byte[] stylePoolOffset;
+    public byte[] strOffsets;
+    public byte[] styleOffsets;
+    public byte[] strPool;
+    public byte[] stylePool;
 
-	public ArrayList<String> stringContentList;
-	
-	public byte[] getByte(ArrayList<String> strList){
-		
-		byte[] strB = getStrListByte(strList);
-		
-		byte[] src = new byte[0];
-		
-		src = Utils.addByte(src, type);
-		src = Utils.addByte(src, size);
-		src = Utils.addByte(src, Utils.int2Byte(strList.size()));//×Ö·û¸öÊı
-		src = Utils.addByte(src, styleCount);
-		src = Utils.addByte(src, unknown);
-		src = Utils.addByte(src, strPoolOffset);
-		src = Utils.addByte(src, stylePoolOffset);
-		
-		byte[] strOffsets = new byte[0];
-		ArrayList<String> convertList = convertStrList(strList);
-		
-		int len = 0;
-		for(int i=0;i<convertList.size();i++){
-			strOffsets = Utils.addByte(strOffsets, Utils.int2Byte(len));
-			len += (convertList.get(i).length()+4);//ÕâÀïµÄ4°üÀ¨×Ö·û´®Í·²¿µÄ×Ö·û´®³¤¶È2¸ö×Ö½Ú£¬ºÍ×Ö·û´®½áÎ²µÄ2¸ö×Ö½Ú
-		}
-		
-		src = Utils.addByte(src, strOffsets);//Ğ´Èëstring offsetsÖµ
-		
-		int newStyleOffsets = src.length;//Ğ´ÍêstrOffsetsÖ®ºó¾ÍÊÇstyleOffsetsµÄÖµ
-		
-		src = Utils.addByte(src, styleOffsets);//Ğ´Èëstyle offsetsÖµ
-		
-		int newStringPools = src.length;
-		
-		src = Utils.addByte(src, strB);//Ğ´Èëstring pools
-		
-		src = Utils.addByte(src, stylePool); //Ğ´Èëstyle pools
-		
-		//ÒòÎªstrOffsets´óĞ¡µÄ¸Ä±ä£¬ÕâÀïµÄstyleOffsetsÒ²ĞèÒª±ä¶¯
-		if(styleOffsets != null && styleOffsets.length > 0){
-			//Ö»ÓĞstyleÓĞĞ§²ÅÄÜĞ´Èë
-			src = Utils.replaceBytes(src, Utils.int2Byte(newStyleOffsets), 28+strList.size()*4);
-		}
-		
-		//ÒòÎªstrOffsets´óĞ¡¸Ä±ä£¬ÕâÀïµÄstrPoolOffsetsºÍstylePoolOffsetÒ²Òª±ä¶¯
-		src = Utils.replaceBytes(src, Utils.int2Byte(newStringPools), 20);//ĞŞ¸ÄstrPoolOffsetsÆ«ÒÆÖµ
-		
-		//¶ÔÓÚString ChunkµÄ´óĞ¡±ØĞëÊÇ4µÄ±¶Êı£¬Èç¹û²»ÊÇ²¹Æë£¬ÒòÎªChunkÒ»¶¨ÊÇ2µÄ±¶Êı£¬ËùÒÔÖ»ĞèÒª²¹Æë2¸ö×Ö½Ú¼´¿É
-		if(src.length %4 != 0){
-			src = Utils.addByte(src, new byte[]{0,0});
-		}
-		
-		//ĞŞ¸Ächunk×îÖÕµÄ´óĞ¡
-		src = Utils.replaceBytes(src, Utils.int2Byte(src.length), 4);
-		
-		return src;
-	}
-	
-	public int getLen(){
-		return type.length+size.length+strCount.length+styleCount.length+
-				unknown.length+strPoolOffset.length+stylePoolOffset.length+
-				strOffsets.length+styleOffsets.length+strPool.length+stylePool.length;
-	}
-	
-	public static StringChunk createChunk(byte[] byteSrc, int stringChunkOffset){
+    public ArrayList<String> stringContentList;
 
-		StringChunk chunk = new StringChunk();
+    public byte[] getByte(ArrayList<String> strList){
 
-		//String ChunkµÄ±êÊ¾
-		chunk.type = Utils.copyByte(byteSrc, 0+stringChunkOffset, 4);
+        byte[] strB = getStrListByte(strList);
 
-		//String Size
-		chunk.size = Utils.copyByte(byteSrc, 4+stringChunkOffset, 4);
-		int chunkSize = Utils.byte2int(chunk.size);
+        byte[] src = new byte[0];
 
-		//String Count
-		chunk.strCount = Utils.copyByte(byteSrc, 8+stringChunkOffset, 4);
-		int chunkStringCount = Utils.byte2int(chunk.strCount);
+        src = Utils.addByte(src, type);
+        src = Utils.addByte(src, size);
+        src = Utils.addByte(src, Utils.int2Byte(strList.size()));//å­—ç¬¦ä¸ªæ•°
+        src = Utils.addByte(src, styleCount);
+        src = Utils.addByte(src, unknown);
+        src = Utils.addByte(src, strPoolOffset);
+        src = Utils.addByte(src, stylePoolOffset);
 
-		chunk.stringContentList = new ArrayList<String>(chunkStringCount);
+        byte[] strOffsets = new byte[0];
+        ArrayList<String> convertList = convertStrList(strList);
 
-		//Style Count
-		chunk.styleCount = Utils.copyByte(byteSrc, 12+stringChunkOffset, 4);
-		int chunkStyleCount = Utils.byte2int(chunk.styleCount);
+        int len = 0;
+        for(int i=0;i<convertList.size();i++){
+            strOffsets = Utils.addByte(strOffsets, Utils.int2Byte(len));
+            len += (convertList.get(i).length()+4);//è¿™é‡Œçš„4åŒ…æ‹¬å­—ç¬¦ä¸²å¤´éƒ¨çš„å­—ç¬¦ä¸²é•¿åº¦2ä¸ªå­—èŠ‚ï¼Œå’Œå­—ç¬¦ä¸²ç»“å°¾çš„2ä¸ªå­—èŠ‚
+        }
 
-		//unknown
-		chunk.unknown = Utils.copyByte(byteSrc, 16+stringChunkOffset, 4);
+        src = Utils.addByte(src, strOffsets);//å†™å…¥string offsetså€¼
 
-		//ÕâÀïĞèÒª×¢ÒâµÄÊÇ£¬ºóÃæµÄËÄ¸ö×Ö½ÚÊÇStyleµÄÄÚÈİ£¬È»ºó½ô½Ó×ÅµÄËÄ¸ö×Ö½ÚÊ¼ÖÕÊÇ0£¬ËùÒÔÎÒÃÇĞèÒªÖ±½Ó¹ıÂËÕâ8¸ö×Ö½Ú
-		//String Offset Ïà¶ÔÓÚString ChunkµÄÆğÊ¼Î»ÖÃ0x00000008
-		chunk.strPoolOffset = Utils.copyByte(byteSrc, 20+stringChunkOffset, 4);
+        int newStyleOffsets = src.length;//å†™å®ŒstrOffsetsä¹‹åå°±æ˜¯styleOffsetsçš„å€¼
 
-		//Style Offset
-		chunk.stylePoolOffset = Utils.copyByte(byteSrc, 24+stringChunkOffset, 4);
+        src = Utils.addByte(src, styleOffsets);//å†™å…¥style offsetså€¼
 
-		//String Offsets
-		chunk.strOffsets = Utils.copyByte(byteSrc, 28+stringChunkOffset, 4*chunkStringCount);
+        int newStringPools = src.length;
 
-		//Style Offsets
-		chunk.styleOffsets = Utils.copyByte(byteSrc, 28+stringChunkOffset+4*chunkStringCount, 4*chunkStyleCount);
-		
-		int stringContentStart = 8 + Utils.byte2int(chunk.strPoolOffset);
+        src = Utils.addByte(src, strB);//å†™å…¥string pools
 
-		//String Content
-		byte[] chunkStringContentByte = Utils.copyByte(byteSrc, stringContentStart, chunkSize);
+        src = Utils.addByte(src, stylePool); //å†™å…¥style pools
 
-		/**
-		 * ÔÚ½âÎö×Ö·û´®µÄÊ±ºòÓĞ¸öÎÊÌâ£¬¾ÍÊÇ±àÂë£ºUTF-8ºÍUTF-16,Èç¹ûÊÇUTF-8µÄ»°ÊÇÒÔ00½áÎ²µÄ£¬Èç¹ûÊÇUTF-16µÄ»°ÒÔ00 00½áÎ²µÄ
-		 */
-		//ÕâÀïµÄ¸ñÊ½ÊÇ£ºÆ«ÒÆÖµ¿ªÊ¼µÄÁ½¸ö×Ö½ÚÊÇ×Ö·û´®µÄ³¤¶È£¬½Ó×ÅÊÇ×Ö·û´®µÄÄÚÈİ£¬ºóÃæ¸ú×ÅÁ½¸ö×Ö·û´®µÄ½áÊø·û00
-		byte[] firstStringSizeByte = Utils.copyByte(chunkStringContentByte, 0, 2);
-		//Ò»¸ö×Ö·û¶ÔÓ¦Á½¸ö×Ö½Ú
-		int firstStringSize = Utils.byte2Short(firstStringSizeByte)*2;
-		byte[] firstStringContentByte = Utils.copyByte(chunkStringContentByte, 2, firstStringSize+2);
-		
-		String firstStringContent = new String(firstStringContentByte);
-		
-		chunk.stringContentList.add(Utils.filterStringNull(firstStringContent));
-		//½«×Ö·û´®¶¼·Åµ½ArrayListÖĞ
-		int endStringIndex = 2+firstStringSize+2;
-		while(chunk.stringContentList.size() < chunkStringCount){
-			//Ò»¸ö×Ö·û¶ÔÓ¦Á½¸ö×Ö½Ú£¬ËùÒÔÒª³ËÒÔ2
-			int stringSize = Utils.byte2Short(Utils.copyByte(chunkStringContentByte, endStringIndex, 2))*2;
-			byte[] temp = Utils.copyByte(chunkStringContentByte, endStringIndex+2, stringSize+2);
-			String str = new String(temp);
-			chunk.stringContentList.add(Utils.filterStringNull(str));
-			endStringIndex += (2+stringSize+2);
-		}
-		
-		int len = 0;
-		for(String str : chunk.stringContentList){
-			len += 2;
-			len += str.length()*2;
-			len += 2;
-		}
-		chunk.strPool = Utils.copyByte(byteSrc, stringContentStart, len);
-		int stylePool = stringContentStart + len;
-		
-		chunk.stylePool = Utils.copyByte(byteSrc, stylePool, chunkSize-(stylePool));
-		
-		return chunk;
-	}
-	
-	private byte[] getStrListByte(ArrayList<String> strList){
-		byte[] src = new byte[0];
-		ArrayList<String> stringContentList = convertStrList(strList);
-		for(int i=0;i<stringContentList.size();i++){
-			byte[] tempAry = new byte[0];
-			short len = (short)(stringContentList.get(i).length()/2);
-			byte[] lenAry = Utils.shortToByte(len);
-			tempAry = Utils.addByte(tempAry, lenAry);
-			tempAry = Utils.addByte(tempAry, stringContentList.get(i).getBytes());
-			tempAry = Utils.addByte(tempAry, new byte[]{0,0});
-			src = Utils.addByte(src, tempAry);
-		}
-		return src;
-	}
-	
-	private ArrayList<String> convertStrList(ArrayList<String> stringContentList){
-		ArrayList<String> destList = new ArrayList<String>(stringContentList.size());
-		for(String str : stringContentList){
-			byte[] temp = str.getBytes();
-			byte[] src = new byte[temp.length*2];
-			for(int i=0;i<temp.length;i++){
-				src[i*2] = temp[i];
-				src[i*2+1] = 0;
-			}
-			destList.add(new String(src));
-		}
-		return destList;
-	}
-	
+        //å› ä¸ºstrOffsetså¤§å°çš„æ”¹å˜ï¼Œè¿™é‡Œçš„styleOffsetsä¹Ÿéœ€è¦å˜åŠ¨
+        if(styleOffsets != null && styleOffsets.length > 0){
+            //åªæœ‰styleæœ‰æ•ˆæ‰èƒ½å†™å…¥
+            src = Utils.replaceBytes(src, Utils.int2Byte(newStyleOffsets), 28+strList.size()*4);
+        }
+
+        //å› ä¸ºstrOffsetså¤§å°æ”¹å˜ï¼Œè¿™é‡Œçš„strPoolOffsetså’ŒstylePoolOffsetä¹Ÿè¦å˜åŠ¨
+        src = Utils.replaceBytes(src, Utils.int2Byte(newStringPools), 20);//ä¿®æ”¹strPoolOffsetsåç§»å€¼
+
+        //å¯¹äºString Chunkçš„å¤§å°å¿…é¡»æ˜¯4çš„å€æ•°ï¼Œå¦‚æœä¸æ˜¯è¡¥é½ï¼Œå› ä¸ºChunkä¸€å®šæ˜¯2çš„å€æ•°ï¼Œæ‰€ä»¥åªéœ€è¦è¡¥é½2ä¸ªå­—èŠ‚å³å¯
+        if(src.length %4 != 0){
+            src = Utils.addByte(src, new byte[]{0,0});
+        }
+
+        //ä¿®æ”¹chunkæœ€ç»ˆçš„å¤§å°
+        src = Utils.replaceBytes(src, Utils.int2Byte(src.length), 4);
+
+        return src;
+    }
+
+    public int getLen(){
+        return type.length+size.length+strCount.length+styleCount.length+
+                unknown.length+strPoolOffset.length+stylePoolOffset.length+
+                strOffsets.length+styleOffsets.length+strPool.length+stylePool.length;
+    }
+
+    public static StringChunk createChunk(byte[] byteSrc, int stringChunkOffset){
+
+        StringChunk chunk = new StringChunk();
+
+        //String Chunkçš„æ ‡ç¤º
+        chunk.type = Utils.copyByte(byteSrc, 0+stringChunkOffset, 4);
+
+        //String Size
+        chunk.size = Utils.copyByte(byteSrc, 4+stringChunkOffset, 4);
+        int chunkSize = Utils.byte2int(chunk.size);
+
+        //String Count
+        chunk.strCount = Utils.copyByte(byteSrc, 8+stringChunkOffset, 4);
+        int chunkStringCount = Utils.byte2int(chunk.strCount);
+
+        chunk.stringContentList = new ArrayList<String>(chunkStringCount);
+
+        //Style Count
+        chunk.styleCount = Utils.copyByte(byteSrc, 12+stringChunkOffset, 4);
+        int chunkStyleCount = Utils.byte2int(chunk.styleCount);
+
+        //unknown
+        chunk.unknown = Utils.copyByte(byteSrc, 16+stringChunkOffset, 4);
+
+        //è¿™é‡Œéœ€è¦æ³¨æ„çš„æ˜¯ï¼Œåé¢çš„å››ä¸ªå­—èŠ‚æ˜¯Styleçš„å†…å®¹ï¼Œç„¶åç´§æ¥ç€çš„å››ä¸ªå­—èŠ‚å§‹ç»ˆæ˜¯0ï¼Œæ‰€ä»¥æˆ‘ä»¬éœ€è¦ç›´æ¥è¿‡æ»¤è¿™8ä¸ªå­—èŠ‚
+        //String Offset ç›¸å¯¹äºString Chunkçš„èµ·å§‹ä½ç½®0x00000008
+        chunk.strPoolOffset = Utils.copyByte(byteSrc, 20+stringChunkOffset, 4);
+
+        //Style Offset
+        chunk.stylePoolOffset = Utils.copyByte(byteSrc, 24+stringChunkOffset, 4);
+
+        //String Offsets
+        chunk.strOffsets = Utils.copyByte(byteSrc, 28+stringChunkOffset, 4*chunkStringCount);
+
+        //Style Offsets
+        chunk.styleOffsets = Utils.copyByte(byteSrc, 28+stringChunkOffset+4*chunkStringCount, 4*chunkStyleCount);
+
+        int stringContentStart = 8 + Utils.byte2int(chunk.strPoolOffset);
+
+        //String Content
+        byte[] chunkStringContentByte = Utils.copyByte(byteSrc, stringContentStart, chunkSize);
+
+        /**
+         * åœ¨è§£æå­—ç¬¦ä¸²çš„æ—¶å€™æœ‰ä¸ªé—®é¢˜ï¼Œå°±æ˜¯ç¼–ç ï¼šUTF-8å’ŒUTF-16,å¦‚æœæ˜¯UTF-8çš„è¯æ˜¯ä»¥00ç»“å°¾çš„ï¼Œå¦‚æœæ˜¯UTF-16çš„è¯ä»¥00 00ç»“å°¾çš„
+         */
+        //è¿™é‡Œçš„æ ¼å¼æ˜¯ï¼šåç§»å€¼å¼€å§‹çš„ä¸¤ä¸ªå­—èŠ‚æ˜¯å­—ç¬¦ä¸²çš„é•¿åº¦ï¼Œæ¥ç€æ˜¯å­—ç¬¦ä¸²çš„å†…å®¹ï¼Œåé¢è·Ÿç€ä¸¤ä¸ªå­—ç¬¦ä¸²çš„ç»“æŸç¬¦00
+        byte[] firstStringSizeByte = Utils.copyByte(chunkStringContentByte, 0, 2);
+        //ä¸€ä¸ªå­—ç¬¦å¯¹åº”ä¸¤ä¸ªå­—èŠ‚
+        int firstStringSize = Utils.byte2Short(firstStringSizeByte)*2;
+        byte[] firstStringContentByte = Utils.copyByte(chunkStringContentByte, 2, firstStringSize+2);
+
+        String firstStringContent = new String(firstStringContentByte);
+
+        chunk.stringContentList.add(Utils.filterStringNull(firstStringContent));
+        //å°†å­—ç¬¦ä¸²éƒ½æ”¾åˆ°ArrayListä¸­
+        int endStringIndex = 2+firstStringSize+2;
+        while(chunk.stringContentList.size() < chunkStringCount){
+            //ä¸€ä¸ªå­—ç¬¦å¯¹åº”ä¸¤ä¸ªå­—èŠ‚ï¼Œæ‰€ä»¥è¦ä¹˜ä»¥2
+            int stringSize = Utils.byte2Short(Utils.copyByte(chunkStringContentByte, endStringIndex, 2))*2;
+            byte[] temp = Utils.copyByte(chunkStringContentByte, endStringIndex+2, stringSize+2);
+            String str = new String(temp);
+            chunk.stringContentList.add(Utils.filterStringNull(str));
+            endStringIndex += (2+stringSize+2);
+        }
+
+        int len = 0;
+        for(String str : chunk.stringContentList){
+            len += 2;
+            len += str.length()*2;
+            len += 2;
+        }
+        chunk.strPool = Utils.copyByte(byteSrc, stringContentStart, len);
+        int stylePool = stringContentStart + len;
+
+        chunk.stylePool = Utils.copyByte(byteSrc, stylePool, chunkSize-(stylePool));
+
+        return chunk;
+    }
+
+    private byte[] getStrListByte(ArrayList<String> strList){
+        byte[] src = new byte[0];
+        ArrayList<String> stringContentList = convertStrList(strList);
+        for(int i=0;i<stringContentList.size();i++){
+            byte[] tempAry = new byte[0];
+            short len = (short)(stringContentList.get(i).length()/2);
+            byte[] lenAry = Utils.shortToByte(len);
+            tempAry = Utils.addByte(tempAry, lenAry);
+            tempAry = Utils.addByte(tempAry, stringContentList.get(i).getBytes());
+            tempAry = Utils.addByte(tempAry, new byte[]{0,0});
+            src = Utils.addByte(src, tempAry);
+        }
+        return src;
+    }
+
+    private ArrayList<String> convertStrList(ArrayList<String> stringContentList){
+        ArrayList<String> destList = new ArrayList<String>(stringContentList.size());
+        for(String str : stringContentList){
+            byte[] temp = str.getBytes();
+            byte[] src = new byte[temp.length*2];
+            for(int i=0;i<temp.length;i++){
+                src[i*2] = temp[i];
+                src[i*2+1] = 0;
+            }
+            destList.add(new String(src));
+        }
+        return destList;
+    }
+
 }

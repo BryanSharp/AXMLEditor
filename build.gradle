@@ -1,4 +1,4 @@
-group 'BryanSharp'
+group 'com.bryansharp'
 version '1.0-SNAPSHOT'
 
 apply plugin: 'java'

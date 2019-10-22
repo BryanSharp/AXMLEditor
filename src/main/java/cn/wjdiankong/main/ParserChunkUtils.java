@@ -14,176 +14,176 @@ import cn.wjdiankong.chunk.TextChunk;
 import cn.wjdiankong.chunk.XmlStruct;
 
 public class ParserChunkUtils {
-	
-	public static int stringChunkOffset = 8;
-	public static int resourceChunkOffset;
-	public static int nextChunkOffset;
-	
-	public static XmlStruct xmlStruct = new XmlStruct();
-	
-	public static boolean isApplication = false;
-	public static boolean isManifest = false;
-	
-	public static List<TagChunk> tagChunkList = new ArrayList<TagChunk>();
-	
-	public static void clear(){
-		resourceChunkOffset = 0;
-		nextChunkOffset = 0;
-		isApplication = false;
-		isManifest = false;
-		tagChunkList.clear();
-		xmlStruct.clear();
-	}
-	
-	public static void parserXml(){
-		clear();
-		ParserChunkUtils.parserXmlHeader(xmlStruct.byteSrc);
-		ParserChunkUtils.parserStringChunk(xmlStruct.byteSrc);
-		ParserChunkUtils.parserResourceChunk(xmlStruct.byteSrc);
-		ParserChunkUtils.parserXmlContent(xmlStruct.byteSrc);
-	}
-	
-	/**
-	 * ½âÎöxmlµÄÍ·²¿ÐÅÏ¢
-	 * @param byteSrc
-	 */
-	public static void parserXmlHeader(byte[] byteSrc){
-		byte[] xmlMagic = Utils.copyByte(byteSrc, 0, 4);
-		byte[] xmlSize = Utils.copyByte(byteSrc, 4, 4);
-		xmlStruct.magicNumber = xmlMagic;
-		xmlStruct.fileSize = xmlSize;
-	}
-	
-	/**
-	 * ½âÎöStringChunk
-	 * @param byteSrc
-	 */
-	public static void parserStringChunk(byte[] byteSrc){
-		xmlStruct.stringChunk = StringChunk.createChunk(byteSrc, stringChunkOffset);
-		byte[] chunkSizeByte = Utils.copyByte(byteSrc, 12, 4);
-		resourceChunkOffset = stringChunkOffset + Utils.byte2int(chunkSizeByte);
-	}
-	
-	/**
-	 * ½âÎöResource Chunk
-	 * @param byteSrc
-	 */
-	public static void parserResourceChunk(byte[] byteSrc){
-		xmlStruct.resChunk = ResourceChunk.createChunk(byteSrc, resourceChunkOffset);
-		byte[] chunkSizeByte = Utils.copyByte(byteSrc, resourceChunkOffset+4, 4);
-		int chunkSize = Utils.byte2int(chunkSizeByte);
-		nextChunkOffset = (resourceChunkOffset+chunkSize);
-		XmlEditor.tagStartChunkOffset = nextChunkOffset;
-		
-	}
-	
-	/**
-	 * ½âÎöStartNamespace Chunk
-	 * @param byteSrc
-	 */
-	public static void parserStartNamespaceChunk(byte[] byteSrc){
-		xmlStruct.startNamespaceChunk = StartNameSpaceChunk.createChunk(byteSrc);
-	}
-	
-	/**
-	 * ½âÎöEndNamespace Chunk
-	 * @param byteSrc
-	 */
-	public static void parserEndNamespaceChunk(byte[] byteSrc){
-		xmlStruct.endNamespaceChunk = EndNameSpaceChunk.createChunk(byteSrc);
-	}
-	
-	/**
-	 * ½âÎöStartTag Chunk
-	 * @param byteSrc
-	 */
-	public static void parserStartTagChunk(byte[] byteSrc, int offset){
-		
-		StartTagChunk tagChunk = StartTagChunk.createChunk(byteSrc, offset);
-		xmlStruct.startTagChunkList.add(tagChunk);
-		TagChunk chunk = new TagChunk();
-		chunk.startTagChunk = tagChunk;
-		tagChunkList.add(chunk);
-		
-		//½âÎöTagName
-		byte[] tagNameByte = Utils.copyByte(byteSrc, 20, 4);
-		int tagNameIndex = Utils.byte2int(tagNameByte);
-		String tagName = xmlStruct.stringChunk.stringContentList.get(tagNameIndex);
-		
-		//±ê¼ÇÊÇ·ñÎªapplication±êÇ©
-		if(tagName.equals("application")){
-			isApplication = true;
-		}
-		
-	}
-	
-	/**
-	 * ½âÎöEndTag Chunk
-	 * @param byteSrc
-	 */
-	public static void parserEndTagChunk(byte[] byteSrc, int offset){
-		EndTagChunk tagChunk = EndTagChunk.createChunk(byteSrc, offset);
-		TagChunk chunk = tagChunkList.remove(tagChunkList.size()-1);
-		chunk.endTagChunk = tagChunk;
-		xmlStruct.endTagChunkList.add(tagChunk);
-		xmlStruct.tagChunkList.add(chunk);//±êÇ©½áÊøÁË£¬ÐèÒª°Ñ±êÇ©·ÅÈë³Ø×ÓÖÐ
-	}
-	
-	/**
-	 * ½âÎöText Chunk
-	 * @param byteSrc
-	 */
-	public static void parserTextChunk(byte[] byteSrc){
-		xmlStruct.textChunkList.add(TextChunk.createChunk(byteSrc));
-	}
-	
-	/**
-	 * ¿ªÊ¼½âÎöxmlµÄÕýÎÄÄÚÈÝChunk
-	 * @param byteSrc
-	 */
-	public static void parserXmlContent(byte[] byteSrc){
-		while(!isEnd(byteSrc.length)){
-			byte[] chunkTagByte = Utils.copyByte(byteSrc, nextChunkOffset, 4);
-			byte[] chunkSizeByte = Utils.copyByte(byteSrc, nextChunkOffset+4, 4);
-			int chunkTag = Utils.byte2int(chunkTagByte);
-			int chunkSize = Utils.byte2int(chunkSizeByte);
-			switch(chunkTag){
-				case ChunkTypeNumber.CHUNK_STARTNS:
-					parserStartNamespaceChunk(Utils.copyByte(byteSrc, nextChunkOffset, chunkSize));
-					isManifest = true;
-					break;
-				case ChunkTypeNumber.CHUNK_STARTTAG:
-					parserStartTagChunk(Utils.copyByte(byteSrc, nextChunkOffset, chunkSize), nextChunkOffset);
-					//ÊÇ·ñÎªapplication±êÇ©
-					if(isApplication){
-						XmlEditor.subAppTagChunkOffset = nextChunkOffset+chunkSize;
-						isApplication = false;
-					}
-					//ÊÇ·ñÎªmanifest±êÇ©
-					if(isManifest){
-						XmlEditor.subTagChunkOffsets = nextChunkOffset+chunkSize;
-						isManifest = false;
-					}
-					break;
-				case ChunkTypeNumber.CHUNK_ENDTAG:
-					parserEndTagChunk(Utils.copyByte(byteSrc, nextChunkOffset, chunkSize), nextChunkOffset);
-					break;
-				case ChunkTypeNumber.CHUNK_ENDNS:
-					parserEndNamespaceChunk(Utils.copyByte(byteSrc, nextChunkOffset, chunkSize));
-					break;
-			}
-			nextChunkOffset += chunkSize;
-		}
-		
-	}
-	
-	/**
-	 * ÅÐ¶ÏÊÇ·ñµ½ÎÄ¼þ½áÊøÎ»ÖÃÁË
-	 * @param totalLen
-	 * @return
-	 */
-	public static boolean isEnd(int totalLen){
-		return nextChunkOffset >= totalLen;
-	}
-	
+
+    public static int stringChunkOffset = 8;
+    public static int resourceChunkOffset;
+    public static int nextChunkOffset;
+
+    public static XmlStruct xmlStruct = new XmlStruct();
+
+    public static boolean isApplication = false;
+    public static boolean isManifest = false;
+
+    public static List<TagChunk> tagChunkList = new ArrayList<TagChunk>();
+
+    public static void clear(){
+        resourceChunkOffset = 0;
+        nextChunkOffset = 0;
+        isApplication = false;
+        isManifest = false;
+        tagChunkList.clear();
+        xmlStruct.clear();
+    }
+
+    public static void parserXml(){
+        clear();
+        ParserChunkUtils.parserXmlHeader(xmlStruct.byteSrc);
+        ParserChunkUtils.parserStringChunk(xmlStruct.byteSrc);
+        ParserChunkUtils.parserResourceChunk(xmlStruct.byteSrc);
+        ParserChunkUtils.parserXmlContent(xmlStruct.byteSrc);
+    }
+
+    /**
+     * è§£æžxmlçš„å¤´éƒ¨ä¿¡æ¯
+     * @param byteSrc
+     */
+    public static void parserXmlHeader(byte[] byteSrc){
+        byte[] xmlMagic = Utils.copyByte(byteSrc, 0, 4);
+        byte[] xmlSize = Utils.copyByte(byteSrc, 4, 4);
+        xmlStruct.magicNumber = xmlMagic;
+        xmlStruct.fileSize = xmlSize;
+    }
+
+    /**
+     * è§£æžStringChunk
+     * @param byteSrc
+     */
+    public static void parserStringChunk(byte[] byteSrc){
+        xmlStruct.stringChunk = StringChunk.createChunk(byteSrc, stringChunkOffset);
+        byte[] chunkSizeByte = Utils.copyByte(byteSrc, 12, 4);
+        resourceChunkOffset = stringChunkOffset + Utils.byte2int(chunkSizeByte);
+    }
+
+    /**
+     * è§£æžResource Chunk
+     * @param byteSrc
+     */
+    public static void parserResourceChunk(byte[] byteSrc){
+        xmlStruct.resChunk = ResourceChunk.createChunk(byteSrc, resourceChunkOffset);
+        byte[] chunkSizeByte = Utils.copyByte(byteSrc, resourceChunkOffset+4, 4);
+        int chunkSize = Utils.byte2int(chunkSizeByte);
+        nextChunkOffset = (resourceChunkOffset+chunkSize);
+        XmlEditor.tagStartChunkOffset = nextChunkOffset;
+
+    }
+
+    /**
+     * è§£æžStartNamespace Chunk
+     * @param byteSrc
+     */
+    public static void parserStartNamespaceChunk(byte[] byteSrc){
+        xmlStruct.startNamespaceChunk = StartNameSpaceChunk.createChunk(byteSrc);
+    }
+
+    /**
+     * è§£æžEndNamespace Chunk
+     * @param byteSrc
+     */
+    public static void parserEndNamespaceChunk(byte[] byteSrc){
+        xmlStruct.endNamespaceChunk = EndNameSpaceChunk.createChunk(byteSrc);
+    }
+
+    /**
+     * è§£æžStartTag Chunk
+     * @param byteSrc
+     */
+    public static void parserStartTagChunk(byte[] byteSrc, int offset){
+
+        StartTagChunk tagChunk = StartTagChunk.createChunk(byteSrc, offset);
+        xmlStruct.startTagChunkList.add(tagChunk);
+        TagChunk chunk = new TagChunk();
+        chunk.startTagChunk = tagChunk;
+        tagChunkList.add(chunk);
+
+        //è§£æžTagName
+        byte[] tagNameByte = Utils.copyByte(byteSrc, 20, 4);
+        int tagNameIndex = Utils.byte2int(tagNameByte);
+        String tagName = xmlStruct.stringChunk.stringContentList.get(tagNameIndex);
+
+        //æ ‡è®°æ˜¯å¦ä¸ºapplicationæ ‡ç­¾
+        if(tagName.equals("application")){
+            isApplication = true;
+        }
+
+    }
+
+    /**
+     * è§£æžEndTag Chunk
+     * @param byteSrc
+     */
+    public static void parserEndTagChunk(byte[] byteSrc, int offset){
+        EndTagChunk tagChunk = EndTagChunk.createChunk(byteSrc, offset);
+        TagChunk chunk = tagChunkList.remove(tagChunkList.size()-1);
+        chunk.endTagChunk = tagChunk;
+        xmlStruct.endTagChunkList.add(tagChunk);
+        xmlStruct.tagChunkList.add(chunk);//æ ‡ç­¾ç»“æŸäº†ï¼Œéœ€è¦æŠŠæ ‡ç­¾æ”¾å…¥æ± å­ä¸­
+    }
+
+    /**
+     * è§£æžText Chunk
+     * @param byteSrc
+     */
+    public static void parserTextChunk(byte[] byteSrc){
+        xmlStruct.textChunkList.add(TextChunk.createChunk(byteSrc));
+    }
+
+    /**
+     * å¼€å§‹è§£æžxmlçš„æ­£æ–‡å†…å®¹Chunk
+     * @param byteSrc
+     */
+    public static void parserXmlContent(byte[] byteSrc){
+        while(!isEnd(byteSrc.length)){
+            byte[] chunkTagByte = Utils.copyByte(byteSrc, nextChunkOffset, 4);
+            byte[] chunkSizeByte = Utils.copyByte(byteSrc, nextChunkOffset+4, 4);
+            int chunkTag = Utils.byte2int(chunkTagByte);
+            int chunkSize = Utils.byte2int(chunkSizeByte);
+            switch(chunkTag){
+                case ChunkTypeNumber.CHUNK_STARTNS:
+                    parserStartNamespaceChunk(Utils.copyByte(byteSrc, nextChunkOffset, chunkSize));
+                    isManifest = true;
+                    break;
+                case ChunkTypeNumber.CHUNK_STARTTAG:
+                    parserStartTagChunk(Utils.copyByte(byteSrc, nextChunkOffset, chunkSize), nextChunkOffset);
+                    //æ˜¯å¦ä¸ºapplicationæ ‡ç­¾
+                    if(isApplication){
+                        XmlEditor.subAppTagChunkOffset = nextChunkOffset+chunkSize;
+                        isApplication = false;
+                    }
+                    //æ˜¯å¦ä¸ºmanifestæ ‡ç­¾
+                    if(isManifest){
+                        XmlEditor.subTagChunkOffsets = nextChunkOffset+chunkSize;
+                        isManifest = false;
+                    }
+                    break;
+                case ChunkTypeNumber.CHUNK_ENDTAG:
+                    parserEndTagChunk(Utils.copyByte(byteSrc, nextChunkOffset, chunkSize), nextChunkOffset);
+                    break;
+                case ChunkTypeNumber.CHUNK_ENDNS:
+                    parserEndNamespaceChunk(Utils.copyByte(byteSrc, nextChunkOffset, chunkSize));
+                    break;
+            }
+            nextChunkOffset += chunkSize;
+        }
+
+    }
+
+    /**
+     * åˆ¤æ–­æ˜¯å¦åˆ°æ–‡ä»¶ç»“æŸä½ç½®äº†
+     * @param totalLen
+     * @return
+     */
+    public static boolean isEnd(int totalLen){
+        return nextChunkOffset >= totalLen;
+    }
+
 }

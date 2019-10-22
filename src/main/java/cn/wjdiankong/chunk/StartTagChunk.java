@@ -1,138 +1,138 @@
 package cn.wjdiankong.chunk;
 
-import java.util.ArrayList;
-
 import cn.wjdiankong.main.ChunkTypeNumber;
 import cn.wjdiankong.main.Utils;
 
-public class StartTagChunk implements Chunk{
+import java.util.ArrayList;
 
-	public byte[] type;
-	public byte[] size;
-	public byte[] lineNumber;
-	public byte[] unknown;
-	public byte[] uri;
-	public byte[] name;
-	public byte[] flag;
-	public byte[] attCount;
-	public byte[] classAttr;
-	public byte[] attribute;
-	public ArrayList<AttributeData> attrList;
-	
-	public int offset;
-	
-	public StartTagChunk(){
-		//³õÊ¼»¯ÒÔÏÂÃ»ÓĞÌ«´óÓÃÍ¾µÄ×Ö¶Î
-		type = Utils.int2Byte(ChunkTypeNumber.CHUNK_STARTTAG);
-		lineNumber = new byte[4];
-		unknown = new byte[4];
-		flag = new byte[4];
-		classAttr = new byte[4];
-		
-		//flag±ØĞëÎª0x00140014
-		int flatInt = 0;
-		flatInt = flatInt | 0x00140014;
-		flag = Utils.int2Byte(flatInt);
-	}
-	
-	public byte[] getChunkByte(){
-		byte[] bytes = new byte[getLen()];
-		bytes = Utils.byteConcat(bytes, type, 0);
-		bytes = Utils.byteConcat(bytes, size, 4);
-		bytes = Utils.byteConcat(bytes, lineNumber, 8);
-		bytes = Utils.byteConcat(bytes, unknown, 12);
-		bytes = Utils.byteConcat(bytes, uri, 16);
-		bytes = Utils.byteConcat(bytes, name, 20);
-		bytes = Utils.byteConcat(bytes, flag, 24);
-		bytes = Utils.byteConcat(bytes, attCount, 28);
-		bytes = Utils.byteConcat(bytes, classAttr, 32);
-		bytes = Utils.byteConcat(bytes, attribute, 36);
-		return bytes;
-	}
-	
-	public int getLen(){
-		return type.length+size.length+lineNumber.length+unknown.length+uri.length+name.length+flag.length+attCount.length+classAttr.length+attribute.length;
-	}
-	
-	public static StartTagChunk createChunk(int name, int attCount, int uri, byte[] attribute){
-		StartTagChunk chunk = new StartTagChunk();
-		chunk.size = new byte[4];
-		chunk.name = Utils.int2Byte(name);
-		chunk.uri = Utils.int2Byte(uri);
-		chunk.attCount = Utils.int2Byte(attCount);
-		chunk.attribute = attribute;
-		chunk.size = Utils.int2Byte(chunk.getLen());
-		return chunk;
-	}
-	
-	public static StartTagChunk createChunk(byte[] byteSrc, int offset){
-		StartTagChunk chunk = new StartTagChunk();
-		
-		chunk.offset = offset;
-		
-		//½âÎöChunkTag
-		chunk.type = Utils.copyByte(byteSrc, 0, 4);
+public class StartTagChunk implements Chunk {
 
-		//½âÎöChunkSize
-		chunk.size = Utils.copyByte(byteSrc, 4, 4);
+    public byte[] type;
+    public byte[] size;
+    public byte[] lineNumber;
+    public byte[] unknown;
+    public byte[] uri;
+    public byte[] name;
+    public byte[] flag;
+    public byte[] attCount;
+    public byte[] classAttr;
+    public byte[] attribute;
+    public ArrayList<AttributeData> attrList;
 
-		//½âÎöĞĞºÅ
-		chunk.lineNumber = Utils.copyByte(byteSrc, 8, 4);
+    public int offset;
 
-		//½âÎöunknown
-		chunk.unknown = Utils.copyByte(byteSrc, 12, 4);
+    public StartTagChunk() {
+        //åˆå§‹åŒ–ä»¥ä¸‹æ²¡æœ‰å¤ªå¤§ç”¨é€”çš„å­—æ®µ
+        type = Utils.int2Byte(ChunkTypeNumber.CHUNK_STARTTAG);
+        lineNumber = new byte[4];
+        unknown = new byte[4];
+        flag = new byte[4];
+        classAttr = new byte[4];
 
-		//½âÎöUri
-		chunk.uri = Utils.copyByte(byteSrc, 16, 4);
+        //flagå¿…é¡»ä¸º0x00140014
+        int flatInt = 0;
+        flatInt = flatInt | 0x00140014;
+        flag = Utils.int2Byte(flatInt);
+    }
 
-		//½âÎöTagName
-		chunk.name = Utils.copyByte(byteSrc, 20, 4);
-		
-		//½âÎöflag
-		chunk.flag = Utils.copyByte(byteSrc, 24, 4);
+    public byte[] getChunkByte() {
+        byte[] bytes = new byte[getLen()];
+        bytes = Utils.byteConcat(bytes, type, 0);
+        bytes = Utils.byteConcat(bytes, size, 4);
+        bytes = Utils.byteConcat(bytes, lineNumber, 8);
+        bytes = Utils.byteConcat(bytes, unknown, 12);
+        bytes = Utils.byteConcat(bytes, uri, 16);
+        bytes = Utils.byteConcat(bytes, name, 20);
+        bytes = Utils.byteConcat(bytes, flag, 24);
+        bytes = Utils.byteConcat(bytes, attCount, 28);
+        bytes = Utils.byteConcat(bytes, classAttr, 32);
+        bytes = Utils.byteConcat(bytes, attribute, 36);
+        return bytes;
+    }
 
-		//½âÎöÊôĞÔ¸öÊı(ÕâÀïĞèÒª¹ıÂËËÄ¸ö×Ö½Ú:14001400)
-		chunk.attCount = Utils.copyByte(byteSrc, 28, 4);
-		int attrCount = Utils.byte2int(chunk.attCount);
-		
-		chunk.classAttr = Utils.copyByte(byteSrc, 32, 4);
-		chunk.attribute = Utils.copyByte(byteSrc, 36, attrCount*20);
-		
-		chunk.attrList = new ArrayList<AttributeData>(attrCount);
-		
-		//½âÎöÊôĞÔ
-		//ÕâÀïĞèÒª×¢ÒâµÄÊÇÃ¿¸öÊôĞÔµ¥Ôª¶¼ÊÇÓÉÎå¸öÔªËØ×é³É£¬Ã¿¸öÔªËØÕ¼ÓÃËÄ¸ö×Ö½Ú£ºnamespaceuri, name, valuestring, type, data
-		//ÔÚ»ñÈ¡µ½typeÖµµÄÊ±ºòĞèÒªÓÒÒÆ24Î»
-		for(int i=0;i<attrCount;i++){
-			Integer[] values = new Integer[5];
-			AttributeData attrData = new AttributeData();
-			for(int j=0;j<5;j++){
-				int value = Utils.byte2int(Utils.copyByte(byteSrc, 36+i*20+j*4, 4));
-				attrData.offset = offset + 36 + i*20;
-				switch(j){
-				case 0:
-					attrData.nameSpaceUri = value;
-					break;
-				case 1:
-					attrData.name = value;
-					break;
-				case 2:
-					attrData.valueString = value;
-					break;
-				case 3:
-					value = (value >> 24);
-					attrData.type = value;
-					break;
-				case 4:
-					attrData.data = value;
-					break;
-				}
-				values[j] = value;
-			}
-			chunk.attrList.add(attrData);
-		}
-		
-		return chunk;
-	}
+    public int getLen() {
+        return type.length + size.length + lineNumber.length + unknown.length + uri.length + name.length + flag.length + attCount.length + classAttr.length + attribute.length;
+    }
+
+    public static StartTagChunk createChunk(int name, int attCount, int uri, byte[] attribute) {
+        StartTagChunk chunk = new StartTagChunk();
+        chunk.size = new byte[4];
+        chunk.name = Utils.int2Byte(name);
+        chunk.uri = Utils.int2Byte(uri);
+        chunk.attCount = Utils.int2Byte(attCount);
+        chunk.attribute = attribute;
+        chunk.size = Utils.int2Byte(chunk.getLen());
+        return chunk;
+    }
+
+    public static StartTagChunk createChunk(byte[] byteSrc, int offset) {
+        StartTagChunk chunk = new StartTagChunk();
+
+        chunk.offset = offset;
+
+        //è§£æChunkTag
+        chunk.type = Utils.copyByte(byteSrc, 0, 4);
+
+        //è§£æChunkSize
+        chunk.size = Utils.copyByte(byteSrc, 4, 4);
+
+        //è§£æè¡Œå·
+        chunk.lineNumber = Utils.copyByte(byteSrc, 8, 4);
+
+        //è§£æunknown
+        chunk.unknown = Utils.copyByte(byteSrc, 12, 4);
+
+        //è§£æUri
+        chunk.uri = Utils.copyByte(byteSrc, 16, 4);
+
+        //è§£æTagName
+        chunk.name = Utils.copyByte(byteSrc, 20, 4);
+
+        //è§£æflag
+        chunk.flag = Utils.copyByte(byteSrc, 24, 4);
+
+        //è§£æå±æ€§ä¸ªæ•°(è¿™é‡Œéœ€è¦è¿‡æ»¤å››ä¸ªå­—èŠ‚:14001400)
+        chunk.attCount = Utils.copyByte(byteSrc, 28, 4);
+        int attrCount = Utils.byte2int(chunk.attCount);
+
+        chunk.classAttr = Utils.copyByte(byteSrc, 32, 4);
+        chunk.attribute = Utils.copyByte(byteSrc, 36, attrCount * 20);
+
+        chunk.attrList = new ArrayList<AttributeData>(attrCount);
+
+        //è§£æå±æ€§
+        //è¿™é‡Œéœ€è¦æ³¨æ„çš„æ˜¯æ¯ä¸ªå±æ€§å•å…ƒéƒ½æ˜¯ç”±äº”ä¸ªå…ƒç´ ç»„æˆï¼Œæ¯ä¸ªå…ƒç´ å ç”¨å››ä¸ªå­—èŠ‚ï¼šnamespaceuri, name, valuestring, type, data
+        //åœ¨è·å–åˆ°typeå€¼çš„æ—¶å€™éœ€è¦å³ç§»24ä½
+        for (int i = 0; i < attrCount; i++) {
+            Integer[] values = new Integer[5];
+            AttributeData attrData = new AttributeData();
+            for (int j = 0; j < 5; j++) {
+                int value = Utils.byte2int(Utils.copyByte(byteSrc, 36 + i * 20 + j * 4, 4));
+                attrData.offset = offset + 36 + i * 20;
+                switch (j) {
+                    case 0:
+                        attrData.nameSpaceUri = value;
+                        break;
+                    case 1:
+                        attrData.name = value;
+                        break;
+                    case 2:
+                        attrData.valueString = value;
+                        break;
+                    case 3:
+                        value = (value >> 24);
+                        attrData.type = value;
+                        break;
+                    case 4:
+                        attrData.data = value;
+                        break;
+                }
+                values[j] = value;
+            }
+            chunk.attrList.add(attrData);
+        }
+
+        return chunk;
+    }
 
 }
